@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+#include "../util.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -8,7 +8,6 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "../util.h"
 
 int owned_by_root(int fd) {
   struct stat sb;
@@ -19,31 +18,6 @@ int owned_by_root(int fd) {
     return -errno;
 
   return sb.st_uid == 0;
-}
-
-int cat_file(int path_fd) {
-  _cleanup_close_ int fd = -EBADF;
-  _cleanup_free_ char *proc_fd_path = NULL;
-  int r;
-  struct stat sb;
-
-  r = asprintf(&proc_fd_path, "/proc/self/fd/%d", path_fd);
-  if (r < 0)
-    return -ENOMEM;
-
-  fd = open(proc_fd_path, O_RDONLY|O_CLOEXEC);
-  if (fd < 0)
-    return -errno;
-
-  r = fstat(fd, &sb);
-  if (r < 0)
-    return -errno;
-
-  r = sendfile(STDOUT_FILENO, fd, 0, sb.st_size);
-  if (r < 0)
-    return -errno;
-  
-  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -66,7 +40,7 @@ int main(int argc, char *argv[]) {
   /* for ease of example exploitation */
   sleep(5);
 
-  r = cat_file(fd);
+  r = cat_file_fd(fd);
   if (r < 0)
     die("Failed to cat file: %s\n", strerror(-r));
 

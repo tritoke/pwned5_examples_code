@@ -1,3 +1,5 @@
+#include "../util.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -6,7 +8,6 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "../util.h"
 
 int owned_by_root(const char *path) {
   struct stat sb;
@@ -17,26 +18,6 @@ int owned_by_root(const char *path) {
     return -errno;
 
   return sb.st_uid == 0;
-}
-
-int cat_file(const char *path) {
-  _cleanup_close_ int fd = -EBADF;
-  int r;
-  struct stat sb;
-
-  fd = open(path, O_RDONLY);
-  if (fd < 0)
-    return -errno;
-
-  r = fstat(fd, &sb);
-  if (r < 0)
-    return -errno;
-
-  r = sendfile(STDOUT_FILENO, fd, 0, sb.st_size);
-  if (r < 0)
-    return -errno;
-  
-  return 0;
 }
 
 int main(int argc, char *argv[]) {
